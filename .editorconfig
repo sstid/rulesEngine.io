@@ -1,0 +1,16 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = false
+trim_trailing_whitespace = true
+
+[{*.json,*.yml}]
+indent_style = space
+indent_size = 2
+quote_type = double
+
+[*.md]
+trim_trailing_whitespace = false
