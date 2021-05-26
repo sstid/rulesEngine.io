@@ -2,7 +2,7 @@
 
 Isomorphic JavaScript rules engine based on spoken language verb tenses.
 
-[![Build Status](https://github.com/EwaRvr/rulesEngine.io/workflows/CI/badge.svg?branch=master)](https://github.com/EwaRvr/rulesEngine.io/actions)
+[![Build Status](https://github.com/sstid/rulesEngine.io/workflows/CI/badge.svg?branch=master)](https://github.com/sstid/rulesEngine.io/actions)
 
 -   [Features](#features)
 -   [Definitions](#definitions)
