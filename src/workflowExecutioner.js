@@ -1,5 +1,4 @@
-const cloneDeep = require('lodash.clonedeep');
-const { performance } = require('perf_hooks');
+const cloneDeep = require('lodash.`clonedeep`');
 const { taskToShortName, taskToDescription } = require('./workflowSerialization');
 
 /**
@@ -119,7 +118,6 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
      * @returns {Promise<{data:any,context:Context}>}
      */
     async function _executeStep(step, data, context, workflowStack) {
-        const start = performance.now();
         log.info(`Starting ${taskToDescription(step)}`, context, workflowStack);
         try {
             //execute prerequisites
@@ -129,7 +127,6 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
                 )
             );
 
-            const executing = performance.now();
             log.info(`Executing ${taskToShortName(step)}`, context, workflowStack);
 
             //clone data to leave original message unchanged.
@@ -157,22 +154,10 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
             }
 
             //log that we are done
-            const finished = performance.now();
-            log.info(
-                `Finished ${taskToShortName(step)} (${Math.round(finished - executing)}/${Math.round(
-                    finished - start
-                )}ms)`,
-                context,
-                workflowStack
-            );
+            log.info(`Finished ${taskToShortName(step)}`, context, workflowStack);
             return result;
         } catch (error) {
-            const finished = performance.now();
-            log.error(
-                humanizeError(`${taskToShortName(step)} failed (${Math.round(finished - start)}ms).`, error),
-                context,
-                workflowStack
-            );
+            log.error(humanizeError(`${taskToShortName(step)} failed.`, error), context, workflowStack);
             if (step.onError) {
                 log.info(`Processing custom error handling for ${taskToShortName(step)}.`, context, workflowStack);
                 let errorHandlingResult = await step.onError({ error, data, context, workflowStack, dispatch, log });
