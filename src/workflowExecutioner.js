@@ -64,40 +64,45 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
      * @returns
      */
     async function _executeWorkflow(data, context, workflow = [], workflowStack, isPrerequisiteWorkflow = true) {
-        const output = await workflow.reduce(
-            async (payload, step) => {
-                const { data, context, error } = await payload;
-                if (error) {
+        let output;
+        if (workflow.length < 1) {
+            log.debug('Empty workflow.');
+            return;
+        }
+        for (let i = 0; i < workflow.length; i++) {
+            const step = workflow[i];
+            // prefer previous output as input for next step.
+            output = { data, context, ...output };
+            if (output.error) {
+                if (enableWorkflowStack) {
+                    step._SKIPPED = true;
+                    delete step.prerequisites;
+                }
+                return { error: output.error };
+            } else {
+                if (enableWorkflowStack) {
+                    step._ACTIVE = true;
+                }
+                try {
+                    //`_executeStep` _ALWAYS_ returns `{ data, context }`, or else some sort of error is thrown
+                    //and if we don't await it here we can't handle the error here
+                    output = await _executeStep(step, output.data, output.context, workflowStack);
+                    if (output == null) {
+                        debugger;
+                    }
+                } catch (error) {
                     if (enableWorkflowStack) {
-                        step._SKIPPED = true;
-                        delete step.prerequisites;
+                        step._ABORTED = error.message;
                     }
                     return { error };
-                } else {
+                } finally {
                     if (enableWorkflowStack) {
-                        step._ACTIVE = true;
-                    }
-                    try {
-                        //`_executeStep` _ALWAYS_ returns `{ data, context }`, or else some sort of error is thrown
-                        //and if we don't await it here we can't handle the error here
-                        return await _executeStep(step, data, context, workflowStack);
-                    } catch (error) {
-                        if (enableWorkflowStack) {
-                            step._ABORTED = error.message;
-                        }
-                        return { error };
-                    } finally {
-                        if (enableWorkflowStack) {
-                            delete step._ACTIVE;
-                        }
+                        delete step._ACTIVE;
                     }
                 }
-            },
-            {
-                data,
-                context
             }
-        );
+        }
+
         if (output.data && workflow.length) {
             //dispatch success
             await _dispatchSuccess(output.data, context, workflowStack);
@@ -183,7 +188,7 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
     async function _dispatchSuccess(data, context, workflowStack) {
         // At this time we assume no-one will ever care about running a workflow when something was counted, or fetched correctly
         // Also, we don't go in a never ending loop for success
-        if (['get', 'count'].includes(context.verb) || context.status) {
+        if (['count'].includes(context.verb) || context.status) {
             return;
         }
         //but for anything else, dispatch:
