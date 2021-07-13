@@ -129,7 +129,7 @@ describe('Workflow Executioner', () => {
                     {
                         prerequisites: [
                             [{ logic: ({ data: { x } }) => ({ t: x + 1 }) }],
-                            [{ logic: ({ data: { x } }) => ({ t: x + 2 }) }]
+                            [{ logic: ({ data: { x } }) => Promise.resolve({ t: x + 2 }) }]
                         ],
                         logic: ({ data: { x }, prerequisiteResults }) => ({
                             x,
@@ -183,6 +183,22 @@ describe('Workflow Executioner', () => {
                 expect(dispatchSpy.calls[3].arguments[1].status).toEqual('success');
                 expect(dispatchSpy.calls[3].arguments[0]).toEqual(result);
             });
+
+            describe('the workflow succeeded for the "get" verb ', function () {
+                it('dispatches a success', async () => {
+                    const message = { x: 2 };
+                    const workflow = [
+                        {
+                            logic: ({ data: { x } }) => ({ y: x + 1 })
+                        }
+                    ];
+                    const context = { verb: 'get' };
+                    await engine.execute(message, workflow, context);
+                    expect(dispatchSpy).toHaveBeenCalled();
+                    expect(dispatchSpy.calls[0].arguments[0].y).toEqual(3);
+                    expect(dispatchSpy.calls[0].arguments[1].status).toEqual('success');
+                });
+            });
         });
 
         describe('Rule Abortion', () => {
@@ -204,7 +220,8 @@ describe('Workflow Executioner', () => {
                 ];
                 const context = {};
                 const result = await engine.execute(message, workflow, context);
-                expect(result.t1).toNotExist();
+                expect(result.t1).toExist();
+                expect(result.t1.error.message).toEqual('prerequisite aborted');
                 expect(result.y).toEqual(2);
 
                 expect(dispatchSpy).toHaveBeenCalledTimes(2);
@@ -334,17 +351,6 @@ describe('Workflow Executioner', () => {
             });
         });
         describe('No Dispatching happens', () => {
-            it('the workflow succeeded for the "get" verb ', async () => {
-                const message = { x: 2 };
-                const workflow = [
-                    {
-                        logic: ({ data: { x } }) => ({ y: x + 1 })
-                    }
-                ];
-                const context = { verb: 'get' };
-                await engine.execute(message, workflow, context);
-                expect(dispatchSpy).toNotHaveBeenCalled();
-            });
             it('the workflow succeeded for the "count" verb ', async () => {
                 const message = { x: 2 };
                 const workflow = [
@@ -352,7 +358,7 @@ describe('Workflow Executioner', () => {
                         logic: ({ data: { x } }) => ({ y: x + 1 })
                     }
                 ];
-                const context = { verb: 'get' };
+                const context = { verb: 'count' };
                 await engine.execute(message, workflow, context);
                 expect(dispatchSpy).toNotHaveBeenCalled();
             });

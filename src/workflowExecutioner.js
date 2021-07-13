@@ -67,8 +67,9 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
         let output;
         if (workflow.length < 1) {
             log.debug('Empty workflow.');
-            return;
+            return data;
         }
+
         for (let i = 0; i < workflow.length; i++) {
             const step = workflow[i];
             // prefer previous output as input for next step.
@@ -78,7 +79,7 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
                     step._SKIPPED = true;
                     delete step.prerequisites;
                 }
-                return { error: output.error };
+                output = { error: output.error };
             } else {
                 if (enableWorkflowStack) {
                     step._ACTIVE = true;
@@ -87,14 +88,11 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
                     //`_executeStep` _ALWAYS_ returns `{ data, context }`, or else some sort of error is thrown
                     //and if we don't await it here we can't handle the error here
                     output = await _executeStep(step, output.data, output.context, workflowStack);
-                    if (output == null) {
-                        debugger;
-                    }
                 } catch (error) {
                     if (enableWorkflowStack) {
                         step._ABORTED = error.message;
                     }
-                    return { error };
+                    output = { error };
                 } finally {
                     if (enableWorkflowStack) {
                         delete step._ACTIVE;
@@ -110,6 +108,7 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
             // dispatch fail
             await _dispatchFailure(data, output.error, context, workflowStack);
             if (!isPrerequisiteWorkflow) throw output.error;
+            return output;
         }
         return output.data;
     }
