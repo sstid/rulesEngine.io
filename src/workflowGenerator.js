@@ -1,7 +1,8 @@
+const { getChildContext } = require('./contextProvider');
 const { workflowToString, workflowToJSON, taskToDescription, taskToShortName } = require('./workflowSerialization');
 
 const TRANSFORMATION = 'TRANSFORMATION';
-
+const pick = require('lodash.pick');
 /**
  *
  * @param {object} steps
@@ -54,18 +55,20 @@ function prepareGenerator(steps, rulesRepository, log) {
                     })
                     .then(rules =>
                         //limit the result to as little as possible to limit memory footprint (and not pollute/stuff the workflow stack)
-                        rules.map(
-                            ({ verb, namespace, relation, status, description, prerequisites, logic, onError }) => ({
-                                verb,
-                                namespace,
-                                relation,
-                                status,
-                                description,
-                                prerequisites,
-                                logic,
-                                onError
-                            })
-                        )
+                        rules.map(rule => {
+                            const match = pick(rule, [
+                                'verb',
+                                'namespace',
+                                'relation',
+                                'status',
+                                'description',
+                                'prerequisites',
+                                'logic',
+                                'onError'
+                            ]);
+                            match.originalContext = context;
+                            return match;
+                        })
                     )
             )
         );
@@ -86,28 +89,28 @@ function prepareGenerator(steps, rulesRepository, log) {
                         )} should have a 'context' object, with a 'verb' property.`
                     );
                 }
-                const prereqContext = {
-                    ...context,
-                    //if the prerequisite didn't specify a namespace or relation,
-                    //it means it continues to work on whatever is the current ns/rel
-                    namespace: prereq.context.namespace || context.namespace,
-                    relation: prereq.context.relation || context.relation,
-                    verb: prereq.context.verb, //required field on prerequisites
-                    status: prereq.context.status //only if specified by the prereq});
-                };
+                const prereqContext = getChildContext(context, prereq.context);
                 const prereqWorkflow = await createWorkflowForVerb(prereqContext);
                 //if the prerequisite has a transformation to apply to the data before running the prerequisite workflow
                 //prepend that transformation as an ad-hoc task to the prerequisite workflow
                 // eslint-disable-next-line no-unused-vars
                 const { context: __stripped, ...prereqPayload } = prereq;
+                const description = `Data transformation towards ${taskToShortName(prereqContext)}`;
+                const verb = TRANSFORMATION;
                 return [
                     {
-                        verb: TRANSFORMATION,
-                        description: `Data transformation towards ${taskToShortName(prereqContext)}`,
+                        verb,
+                        description,
                         logic: async ({ data, context, dispatch, log }) => {
-                            let result = {};
+                            const result = {};
+                            const prereqContext = getChildContext(context, { ...prereq.context, verb, description });
                             for (const [key, value] of Object.entries(prereqPayload)) {
-                                result[key] = await getObjectOrFunctionResult(value, { data, context, dispatch, log });
+                                result[key] = await getObjectOrFunctionResult(value, {
+                                    data,
+                                    context: prereqContext,
+                                    dispatch,
+                                    log
+                                });
                             }
                             return result;
                         }

@@ -1,6 +1,6 @@
 const cloneDeep = require('lodash.clonedeep');
 const { taskToShortName, taskToDescription } = require('./workflowSerialization');
-
+const { getChildContext } = require('./contextProvider');
 /**
  * @typedef { import("./index").WorkflowStack } WorkflowStack
  * @typedef { import("./index").Context } Context
@@ -121,7 +121,8 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
      * @param {WorkflowStack[]} [workflowStack]
      * @returns {Promise<{data:any,context:Context}>}
      */
-    async function _executeStep(step, data, context, workflowStack) {
+    async function _executeStep(step, data, parentContext, workflowStack) {
+        const context = getChildContext(parentContext, step);
         log.info(`Starting ${taskToDescription(step)}`, context, workflowStack);
         try {
             //execute prerequisites

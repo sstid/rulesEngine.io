@@ -84,12 +84,13 @@ describe('Workflow Generator', () => {
                     'description',
                     'prerequisites',
                     'logic',
-                    'onError'
+                    'onError',
+                    'originalContext'
                 ]);
                 expect(result.toJSON()).toEqual([{ name: 'v_ns_rel_success', description: 'Lorem Ipsum' }]);
                 // prettier-ignore
                 expect(result.toString()).toEqual(
-                    '─┐ Workflow for create_ns_rel_success - \n' + 
+                    '─┐ Workflow for create_ns_rel_success - \n' +
                     ' └── v_ns_rel_success - Lorem Ipsum\n'
                 );
             });
