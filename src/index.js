@@ -7,6 +7,7 @@ const BASESTEPS = Object.freeze(require('./defaultProviders/steps'));
 
 const workflowGenerator = require('./workflowGenerator');
 const workflowExecutioner = require('./workflowExecutioner');
+const { setContextExcludedFields } = require('./contextProvider');
 
 /**
  * @typedef { import("./index").RulesEngine } RulesEngineClass
@@ -24,7 +25,7 @@ class RulesEngine {
      */
     constructor(rules, settings = {}) {
         const { logging, dispatch, steps, states, cacheAge, enableWorkflowStack = false } = settings;
-
+        setContextExcludedFields(settings.contextExcludedFields);
         this.STEPS = Object.freeze({ ...BASESTEPS, ...steps });
         this.log = { ...consoleLogger, ...(logging || {}) };
         this.cacheAge = isNumber(cacheAge) ? cacheAge : 5000;
