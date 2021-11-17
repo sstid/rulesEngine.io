@@ -1,6 +1,6 @@
 {
   "name": "rulesengine.io",
-  "version": "1.0.6-beta",
+    "version": "1.0.4",
   "description": "Isomorphic rules engine based on spoken language verb tenses.",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
@@ -26,6 +26,8 @@
   },
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
+    "lodash.omit": "^4.5.0",
+    "lodash.pick": "^4.4.0",
     "memoizee": "^0.4.15",
     "lodash.memoize": "^4.1.2"
   },
