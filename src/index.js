@@ -1,4 +1,4 @@
-const memoize = require('memoizee');
+const memoize = require('./memoizedWorkflows');
 
 const consoleLogger = require('./defaultProviders/logging');
 const promiseDispatcher = require('./defaultProviders/dispatch');
@@ -63,11 +63,7 @@ class RulesEngine {
             states: this.STATES,
             enableWorkflowStack
         });
-        this._memoizedWorkflowCreation = memoize(this.generator.createWorkflow, {
-            maxAge: this.cacheAge,
-            promise: true,
-            normalizer: context => JSON.stringify(context)
-        });
+        this._memoizedWorkflowCreation = memoize(this.generator.createWorkflow, this.cacheAge);
     }
 
     /**
