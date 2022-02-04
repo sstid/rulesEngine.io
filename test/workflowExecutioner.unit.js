@@ -37,7 +37,7 @@ describe('Workflow Executioner', () => {
                 const promise = engine.execute(message, workflow, context);
                 expect(promise).toBeA(Promise);
                 expect(await promise).toEqual(message);
-                expect(dispatchSpy).toHaveBeenCalled();
+                expect(dispatchSpy).toNotHaveBeenCalled();
             });
 
             it('executes a simple workflow', async () => {
