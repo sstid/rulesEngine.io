@@ -103,10 +103,10 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
 
         if (output.data && workflow.length) {
             //dispatch success
-            await _dispatchSuccess(output.data, context, workflowStack);
+            await _dispatchSuccess(output.data, output.context || context, workflowStack);
         } else if (output.error && workflow.length) {
             // dispatch fail
-            await _dispatchFailure(data, output.error, context, workflowStack);
+            await _dispatchFailure(data, output.error, output.context || context, workflowStack);
             if (!isPrerequisiteWorkflow) throw output.error;
             return output;
         }
