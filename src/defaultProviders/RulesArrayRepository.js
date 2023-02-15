@@ -1,9 +1,9 @@
 /**
  *
  * @typedef {import('../index').RulesProvider} RulesProvider
- * @typedef { import("../index").Rule } Rule
- * @typedef { import("../index").Context } Context
- * @typedef { import("../index").RulesEngine } Context
+ * @typedef { import('../index').Rule } Rule
+ * @typedef { import('../index').Context } Context
+ * @typedef { import('../index').RulesEngine } Context
  */
 
 /**

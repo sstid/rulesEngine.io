@@ -67,6 +67,7 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
         let output;
         if (workflow.length < 1) {
             log.debug('Empty workflow.');
+            await _dispatchSuccess(data, context, workflowStack);
             return data;
         }
 
