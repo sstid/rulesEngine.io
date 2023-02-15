@@ -187,9 +187,8 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
      * Dispatch a `__success` message
      */
     async function _dispatchSuccess(data, context, workflowStack) {
-        // At this time we assume no-one will ever care about running a workflow when something was counted, or fetched correctly
-        // Also, we don't go in a never ending loop for success
-        if (['count'].includes(context.verb) || context.status) {
+        // Don't go in a never ending loop for success
+        if (context.status) {
             return;
         }
         //but for anything else, dispatch:
