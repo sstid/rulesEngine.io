@@ -34,6 +34,7 @@ export interface Settings {
     logging?: LoggingProvider;
     Dispatch?<T>(data: T, context: Context): Promise<void>;
     steps?: object;
+    contextMatchingFields?: string[];
 }
 
 export interface TaskParameter<T> {

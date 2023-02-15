@@ -1,6 +1,6 @@
 const cloneDeep = require('lodash.clonedeep');
 const { taskToShortName, taskToDescription } = require('./workflowSerialization');
-
+const { getChildContext } = require('./contextProvider');
 /**
  * @typedef { import("./index").WorkflowStack } WorkflowStack
  * @typedef { import("./index").Context } Context
@@ -104,10 +104,10 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
 
         if (output.data && workflow.length) {
             //dispatch success
-            await _dispatchSuccess(output.data, context, workflowStack);
+            await _dispatchSuccess(output.data, output.context || context, workflowStack);
         } else if (output.error && workflow.length) {
             // dispatch fail
-            await _dispatchFailure(data, output.error, context, workflowStack);
+            await _dispatchFailure(data, output.error, output.context || context, workflowStack);
             if (!isPrerequisiteWorkflow) throw output.error;
             return output;
         }
@@ -122,7 +122,8 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
      * @param {WorkflowStack[]} [workflowStack]
      * @returns {Promise<{data:any,context:Context}>}
      */
-    async function _executeStep(step, data, context, workflowStack) {
+    async function _executeStep(step, data, parentContext, workflowStack) {
+        const context = getChildContext(parentContext, step);
         log.info(`Starting ${taskToDescription(step)}`, context, workflowStack);
         try {
             //execute prerequisites
@@ -186,9 +187,8 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
      * Dispatch a `__success` message
      */
     async function _dispatchSuccess(data, context, workflowStack) {
-        // At this time we assume no-one will ever care about running a workflow when something was counted, or fetched correctly
-        // Also, we don't go in a never ending loop for success
-        if (['count'].includes(context.verb) || context.status) {
+        // Don't go in a never ending loop for success
+        if (context.status) {
             return;
         }
         //but for anything else, dispatch:
