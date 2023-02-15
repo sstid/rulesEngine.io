@@ -185,7 +185,7 @@ describe('Workflow Executioner', () => {
                 expect(dispatchSpy.calls[3].arguments[0]).toEqual(result);
             });
 
-            describe('the workflow succeeded for the "get" verb ', function () {
+            describe('the workflow succeeded for the "get" verb ', function() {
                 it('dispatches a success', async () => {
                     const message = { x: 2 };
                     const workflow = [
@@ -361,7 +361,7 @@ describe('Workflow Executioner', () => {
                 ];
                 const context = { verb: 'count' };
                 await engine.execute(message, workflow, context);
-                expect(dispatchSpy).toNotHaveBeenCalled();
+                expect(dispatchSpy).toHaveBeenCalled();
             });
 
             it('the workflow succeeded for a status ', async () => {

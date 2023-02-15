@@ -1,7 +1,10 @@
 const omit = require('lodash.omit');
 let _contextExcludedFields = ['onError', 'logic', 'prereqs', 'description'];
 
-module.exports = { setContextExcludedFields, getContextExcludedFields, getChildContext };
+const _private = {
+    reset: () => { _contextExcludedFields = ['onError', 'logic', 'prereqs', 'description']; }
+};
+module.exports = { setContextExcludedFields, getContextExcludedFields, getChildContext, _private };
 
 function setContextExcludedFields(fields = []) {
     _contextExcludedFields = [..._contextExcludedFields, ...fields];
@@ -30,8 +33,6 @@ function getChildContext(parentContext, step) {
 
     if (stepContext.verb === 'TRANSFORMATION') {
         newContext.verb = stepContext.verb;
-        newContext.logic = stepContext.logic;
-        newContext.description = stepContext.description;
     } else if (stepContext.originalContext == null && stepContext != null && stepContext.verb != null) {
         newContext = { ...newContext, ...stepContext };
     }
