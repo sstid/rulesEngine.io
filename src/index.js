@@ -24,7 +24,7 @@ class RulesEngine {
      * @param {Settings} [settings]
      */
     constructor(rules, settings = {}) {
-        const { logging, dispatch, steps, states, cacheAge, enableWorkflowStack = false } = settings;
+        const { memoizer = memoize, logging, dispatch, steps, states, cacheAge, enableWorkflowStack = false } = settings;
         setContextExcludedFields(settings.contextExcludedFields);
         this.STEPS = Object.freeze({ ...BASESTEPS, ...steps });
         this.log = { ...consoleLogger, ...(logging || {}) };
@@ -64,7 +64,7 @@ class RulesEngine {
             states: this.STATES,
             enableWorkflowStack
         });
-        this._memoizedWorkflowCreation = memoize(this.generator.createWorkflow, this.cacheAge);
+        this._memoizedWorkflowCreation = memoizer(this.generator.createWorkflow, this.cacheAge);
     }
 
     /**
