@@ -6,6 +6,7 @@
   "types": "./src/index.d.ts",
   "scripts": {
     "test": "nyc --eager true --reporter lcov --reporter text mocha -R progress --recursive",
+    "mocha": "mocha --recursive",
     "lint": "eslint --ignore-path .gitignore ."
   },
   "nyc": {
