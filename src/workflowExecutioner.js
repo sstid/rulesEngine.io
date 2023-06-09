@@ -217,6 +217,11 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
 function humanizeError(humanMessage, error) {
     const humanError = new Error(`${humanMessage} - ${error.message}`);
     humanError.stack = humanMessage + ' ' + error.stack;
+    for (const key in error) {
+        if (Object.hasOwnProperty.call(error, key)) {
+            humanError[key] = error[key];
+        }
+    }
     return humanError;
 }
 
