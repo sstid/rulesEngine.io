@@ -42,5 +42,8 @@ jobs:
         run: npm test
 
       # only publish as part of a push to master, not on pull requests
-      - run: npm publish
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: npm publish
+        env:
+            NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+        
