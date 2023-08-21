@@ -101,7 +101,10 @@ function prepareEngine(dispatch, log, { states, enableWorkflowStack }) {
             }
         }
 
-        if ((output.data && workflow.length) || output.error.aborted) {
+        if (output?.error?.aborted) {
+            return output;
+        }
+        if (output.data && workflow.length) {
             //dispatch success
             await _dispatchSuccess(output.data, output.context || context, workflowStack);
         } else if (output.error && workflow.length) {
