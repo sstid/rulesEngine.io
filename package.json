@@ -1,6 +1,6 @@
 {
     "name": "rulesengine.io",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "Isomorphic rules engine based on spoken language verb tenses.",
     "main": "./src/index.js",
     "types": "./src/index.d.ts",
