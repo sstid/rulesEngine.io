@@ -1,8 +1,10 @@
-const omit = require('lodash.omit');
+const { omit } = require('lodash');
 let _contextExcludedFields = ['onError', 'logic', 'prereqs', 'description'];
 
 const _private = {
-    reset: () => { _contextExcludedFields = ['onError', 'logic', 'prereqs', 'description']; }
+    reset: () => {
+        _contextExcludedFields = ['onError', 'logic', 'prereqs', 'description'];
+    }
 };
 module.exports = { setContextExcludedFields, getContextExcludedFields, getChildContext, _private };
 

@@ -1,4 +1,4 @@
-const cloneDeep = require('lodash.clonedeep');
+const { cloneDeep } = require('lodash');
 const { taskToShortName, taskToDescription } = require('./workflowSerialization');
 const { getChildContext } = require('./contextProvider');
 /**

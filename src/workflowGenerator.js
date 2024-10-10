@@ -2,7 +2,7 @@ const { getChildContext } = require('./contextProvider');
 const { workflowToString, workflowToJSON, taskToDescription, taskToShortName } = require('./workflowSerialization');
 
 const TRANSFORMATION = 'TRANSFORMATION';
-const pick = require('lodash.pick');
+const { pick } = require('lodash');
 /**
  *
  * @param {object} steps

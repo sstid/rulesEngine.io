@@ -22,14 +22,11 @@
         "eslint": "^7.26.0",
         "eslint-plugin-no-only-tests": "^2.6.0",
         "expect": "^1.20.2",
-        "mocha": "^8.4.0",
-        "nyc": "^15.1.0"
+        "mocha": "^10.7.3",
+        "nyc": "^17.1.0"
     },
     "dependencies": {
-        "lodash.clonedeep": "^4.5.0",
-        "lodash.memoize": "^4.1.2",
-        "lodash.omit": "^4.5.0",
-        "lodash.pick": "^4.4.0",
+        "lodash": "^4.17.21",
         "memoizee": "^0.4.15"
     },
     "repository": {
