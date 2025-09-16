@@ -1,48 +1,48 @@
 {
-    "name": "rulesengine.io",
-    "version": "1.2.5",
-    "description": "Isomorphic rules engine based on spoken language verb tenses.",
-    "main": "./src/index.js",
-    "types": "./src/index.d.ts",
-    "scripts": {
-        "test": "nyc --eager true --reporter lcov --reporter text mocha -R progress --recursive",
-        "mocha": "mocha --recursive",
-        "lint": "eslint --ignore-path .gitignore ."
-    },
-    "nyc": {
-        "check-coverage": true,
-        "lines": 80,
-        "eager": true,
-        "exclude": [
-            "test/**",
-            "examples/*"
-        ]
-    },
-    "devDependencies": {
-        "eslint": "^7.26.0",
-        "eslint-plugin-no-only-tests": "^2.6.0",
-        "expect": "^1.20.2",
-        "mocha": "^10.7.3",
-        "nyc": "^17.1.0"
-    },
-    "dependencies": {
-        "lodash": "^4.17.21",
-        "memoizee": "^0.4.15"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/sstid/rulesEngine.io"
-    },
-    "keywords": [
-        "rules engine",
-        "rules",
-        "workflow",
-        "isomorphic"
-    ],
-    "author": "Ewald Ramp <ewald.ramp@sstid.com>",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/sstid/rulesEngine.io/issues"
-    },
-    "homepage": "https://github.com/sstid/rulesEngine.io"
+  "name": "rulesengine.io",
+  "version": "1.2.6",
+  "description": "Isomorphic rules engine based on spoken language verb tenses.",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "scripts": {
+    "test": "nyc --eager true --reporter lcov --reporter text mocha -R progress --recursive",
+    "mocha": "mocha --recursive",
+    "lint": "eslint --ignore-path .gitignore ."
+  },
+  "nyc": {
+    "check-coverage": true,
+    "lines": 80,
+    "eager": true,
+    "exclude": [
+      "test/**",
+      "examples/*"
+    ]
+  },
+  "devDependencies": {
+    "eslint": "^7.26.0",
+    "eslint-plugin-no-only-tests": "^2.6.0",
+    "expect": "^1.20.2",
+    "mocha": "^10.7.3",
+    "nyc": "^17.1.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "memoizee": "^0.4.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sstid/rulesEngine.io"
+  },
+  "keywords": [
+    "rules engine",
+    "rules",
+    "workflow",
+    "isomorphic"
+  ],
+  "author": "Ewald Ramp <ewald.ramp@sstid.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sstid/rulesEngine.io/issues"
+  },
+  "homepage": "https://github.com/sstid/rulesEngine.io"
 }

@@ -3,7 +3,7 @@ type Status = 'success' | 'fail' | string;
 
 export interface Context {
     /** The verb root for the workflow */
-    verb: ['create' | 'get' | 'remove' | 'update' | string];
+    verb: 'create' | 'get' | 'remove' | 'update' | string;
     namespace: string;
     relation: string;
     /** `success` or `fail`, unless overridden */
@@ -45,7 +45,7 @@ export interface TaskParameter<T> {
     workflowStack: WorkflowStack[];
 }
 
-export interface Rule<T> {
+export interface Rule<T = any> {
     /** tensed verb, e.g. `willCreate`, `doingUpdate`, `didRemove` */
     verb: string;
     namespace?: string;
@@ -56,11 +56,10 @@ export interface Rule<T> {
     featureFlag?: string;
     /** `priority` defines order of execution within a specific tense when using `rulesArrayRepository`. Higher priorities get run first. default 0 */
     priority?: number;
-    prerequisites: { context: Context; string?: object | function }[];
+    prerequisites: { context: Context; string?: object | Function }[];
     logic(parameters: TaskParameter<T>): T;
     onError(parameters: { error: Error; data: T; context: Context; workflowStack: WorkflowStack[] }): T;
 }
-export type Rule = Rule<any>;
 
 export interface LoggingProvider {
     debug(message: string, context: Context, workflowStack: WorkflowStack[]): void;
