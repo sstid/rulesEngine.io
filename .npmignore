@@ -105,3 +105,7 @@ dist
 
 # Examples
 examples/
+
+# Monorepo release tooling
+tool/
+test/verifyNpmVersion.unit.js

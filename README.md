@@ -2,7 +2,13 @@
 
 Isomorphic JavaScript rules engine based on spoken language verb tenses.
 
-[![Build Status](https://github.com/sstid/rulesEngine.io/workflows/CI/badge.svg?branch=master)](https://github.com/sstid/rulesEngine.io/actions)
+[![Build Status](https://github.com/sstid/rulesEngine.io/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/sstid/rulesEngine.io/actions/workflows/main.yml)
+
+> [!NOTE]
+> This repository is the public mirror for the `rulesengine.io` package. The
+> source of truth lives in SST's non-public Backbone monorepo. Public issues and
+> pull requests are welcome; maintainers port accepted changes into Backbone,
+> publish them to npm, and mirror the resulting source back here.
 
 -   [Features](#features)
 -   [Definitions](#definitions)
