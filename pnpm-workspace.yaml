@@ -1,0 +1,4 @@
+# pnpm 11 fails installs when a dependency build is not explicitly reviewed.
+# Match Backbone's reviewed policy for the es5-ext postinstall used by this package.
+allowBuilds:
+    es5-ext: true
