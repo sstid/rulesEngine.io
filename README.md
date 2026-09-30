@@ -297,7 +297,16 @@ A _prerequisite_ is an object with at least a `context`:
     -   `verb` - Required. One of the base verbs. E.g. _count_, or _get_, but never one of the _future_ or _past_ tense forms.
     -   `namespace` - Optional. If empty, the original request's namespace will be used.
     -   `relation` - Optional. If empty, the original request's relation will be used.
-    -   `status` - Optional. If absent will _NOT_ use the original request's relation will be used.
+    -   `status` - Optional. Unlike `namespace`/`relation`, an absent `status` does **not** fall through to the original request's — the prerequisite workflow is selected status-less unless the prerequisite declares a status itself. (Otherwise a prerequisite of a `_success`-phase rule would only ever match `_success` rules — usually none — and silently compile an empty workflow.)
+    -   `action` - Optional. Same non-inheritance as `status`.
+
+A prerequisite may also declare a `when` gate:
+
+-   `when` - Optional. Decides whether the prerequisite runs at all, evaluated **before** the prerequisite workflow starts — before its data transformation too, so a skipped prerequisite performs no work whatsoever. Either a fixed value or a (sync or async) function receiving `({ data, context, parentContext, dispatch, log })`, where `context` is the prerequisite's routing context, `parentContext` is the context of the step that declared the prerequisite (see [Prerequisite execution context](#prerequisite-execution-context)), and `dispatch`/`log` are the same engine providers the rule's `logic` receives. Falsy → the prerequisite is skipped and its result slot is `undefined`, while the rule's `logic` still runs. Only `undefined` means "no gate": leave `when` off entirely to let the prerequisite run — a declared `when: null` is a falsy gate and skips it. Unlike the other optional properties below, `when` is never evaluated onto the prerequisite workflow's data.
+    -   **`data` is the live message, not a copy.** Rule `logic` receives a deep clone; `when` does not, because it runs on every message and must stay cheap. Treat it as read-only — mutating it mutates the object the caller passed to `execute`.
+    -   A `when` that **throws** is logged and leaves `{ error }` in the result slot; the rule's `logic` still runs. Note the one asymmetry with a throw *inside* the prerequisite's steps: that dispatches a `_failure` for the prerequisite's context, a throwing `when` does not.
+    -   A `when` that throws an **abort** (an error carrying `aborted === true`) is the exception to that: an abort means "skip this, on purpose" wherever it is thrown, so the slot is `undefined` and nothing is logged as an error — exactly as when a step inside the prerequisite aborts.
+    -   Prefer `when` over aborting from inside the prerequisite when the answer is knowable up front: an abort has to enter the workflow (running the transformation) and is logged at error level, whereas a `when: false` prerequisite never runs and logs nothing. Use an abort for "I got in there and found I should stop".
 
 Any other properties are optional, and control what is passed into the actual prerequisite workflow. They can either be a fixed value, or a function receiving the data and (parent) context.
 
@@ -336,10 +345,46 @@ will result in the following object that is passed into the _update_devices_iotD
 }
 ```
 
+##### Prerequisite execution context
+
+<ul>
+Prerequisite sub-workflows execute under routing taken from the prerequisite's <code>context</code>
+(namespace/relation/verb), merged onto the live request context. That routing is authoritative
+for collection selection even if a step's <code>originalContext</code> still points at the parent
+resource. Compiled prerequisite workflows carry a frozen <code>prereqContext</code> property
+(the prerequisite's declared context keys, minus <code>status</code>/<code>action</code>);
+hand-built test workflows must set it or the engine throws
+(<code>Prerequisite workflow is missing prereqContext.</code>) — it will not fall back to the
+parent context. Anything that clones a compiled workflow must copy <code>prereqContext</code>
+along with it (lodash <code>cloneDeep</code> drops non-index array properties).
+<br/><br/>
+That throw is a <em>wiring</em> error (<code>error.isWiringError === true</code>), not a step
+failure, and it is deliberately exempt from the two mechanisms that normally contain errors: it is
+never passed to a step's <code>onError</code>, and — unlike an ordinary prerequisite failure — it is
+never converted into an <code>undefined</code>/error prerequisite result. It propagates out of
+<code>execute</code> from any nesting depth, without publishing a <code>_failure</code> message.
+<br/><br/>
+<code>verb</code> is part of that routing: every step of a prerequisite mini-workflow runs under the
+prerequisite's declared base verb, exactly as the steps of a base workflow all run under the base
+verb (a <code>get</code> workflow's <code>willGet</code>/<code>doingGet</code>/<code>didGet</code>
+steps all see <code>verb: 'get'</code>). The one exception is the data-transformation step the
+engine prepends to every prerequisite, which keeps <code>verb: 'TRANSFORMATION'</code>. Note that
+each step's context becomes the parent context of the next, so without this the transformation step
+would paint <code>TRANSFORMATION</code> over every step after it — including the context the
+prerequisite's success <code>dispatch</code> is called with.
+</ul>
+
 ##### Aborting a prerequisite workflow
 
 <ul>
-If an exception is thrown in a prerequisite workflow, it will be logged as reason for aborting the prerequisite workflow, and `undefined` will be passed to the associated workflow as the result for that prerequisite. Throwing an error from a prerequisite workflow will NOT abort the main workflow.
+Neither an abort nor an error inside a prerequisite workflow stops the main workflow — the rule's `logic` always still runs. What lands in that prerequisite's result slot differs on purpose:
+
+-   **Abort** — a step threw an error carrying <code>aborted === true</code>. This is expected control flow ("this lookup is not needed after all"): the slot is <code>undefined</code>, nothing is dispatched for the prerequisite, and the rule's `logic` decides what a missing result means.
+-   **Hard error** — any other exception. It is logged, a failure is dispatched for the prerequisite's context, and the slot carries the <code>{ error }</code> output — so a rule can tell "skipped on purpose" from "broke" by inspecting the slot.
+
+That failure is dispatched under the **prerequisite's** verb/namespace/relation — the context the mini-workflow actually ran under — not the parent rule's.
+
+To skip a prerequisite you already know you do not need, use [`when`](#prerequisites) instead: it never enters the workflow at all.
 </ul></ul>
 
 #### Rules logic
@@ -373,8 +418,8 @@ Rules, or specifically _tasks_ in rulesEngine.io is where the logic happens. For
 During execution, the `logic` method is passed 5 or 6 parameters:
 
 -   `data` - This is the the data you passed in to the `execute()` method, after all previous tasks (if any) have been applied to it. If this is a task in a prerequisite workflow, this includes any transformations as defined on the prerequisite definition of the parent rule.
--   `prerequisiteResults` - a (possibly empty) array with the results from all prerequisites workflows, in the same order as they are defined on the `prerequisites`.
--   `context` - the `context` as passed into `execute()`, or, in case of a prerequisite workflow, as constructed in the prerequisite definition.
+-   `prerequisiteResults` - a (possibly empty) array with the results from all prerequisites workflows, in the same order as they are defined on the `prerequisites`. **Always an array — `[]` when the rule declares none, never `undefined`** — so `const [first] = prerequisiteResults` is safe without a default. A skipped ([`when`](#prerequisites)) or aborted prerequisite occupies its slot with `undefined`.
+-   `context` - the `context` as passed into `execute()`, or, in case of a prerequisite workflow, as constructed in the prerequisite definition (the prerequisite's declared routing merged onto the live request context — see [prerequisite execution context](#prerequisite-execution-context)).
 -   `workflowStack` - _If_ [enabled](#debugging-workflow-stack), the workflowStack.
 -   `dispatch` - the [dispatch function](#logging-provider) to emit events
 -   `log` - [Logging object](#dispatch-provider) to output your logging needs
@@ -382,7 +427,9 @@ During execution, the `logic` method is passed 5 or 6 parameters:
 ##### Aborting a workflow
 
 <ul>
-If an exception is thrown in the main workflow, it will abort the workflow, and trigger a `___fail` workflow for the given verb, namespace and relation, unless the aborted workflow was already a `___success` or `___fail` one.
+If an exception is thrown in the main workflow, it will abort the workflow, and trigger a `___fail` workflow for the given verb, namespace and relation, unless the aborted workflow was already a `___success` or `___fail` one. `execute()` rejects with the error.
+
+To stop a workflow **gracefully** — no failure dispatch, no rejection — throw an error carrying <code>aborted === true</code>. Remaining steps are skipped and `execute()` <em>resolves</em> to the <code>{ error }</code> output so the caller can inspect <code>error.aborted</code>. An abort thrown from a rule's `logic` is still offered to that rule's own <code>onError</code> first (which may translate or re-throw it).
 </ul></ul>
 
 #### Error Handling

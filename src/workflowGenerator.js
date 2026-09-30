@@ -1,8 +1,11 @@
-const { getChildContext } = require('./contextProvider');
+const { getChildContext, omitKeys } = require('./contextProvider');
 const { workflowToString, workflowToJSON, taskToDescription, taskToShortName } = require('./workflowSerialization');
 
 const TRANSFORMATION = 'TRANSFORMATION';
 const { pick } = require('lodash');
+
+// Hoisted: `omitKeys` takes a Set, and building one per call would undo the point.
+const STATUS_AND_ACTION = new Set(['status', 'action']);
 /**
  *
  * @param {object} steps
@@ -89,25 +92,38 @@ function prepareGenerator(steps, rulesRepository, log) {
                         )} should have a 'context' object, with a 'verb' property.`
                     );
                 }
-                const prereqContext = getChildContext(context, prereq.context);
+                // A prerequisite that does not declare status/action must not inherit the parent's:
+                // a success-phase parent would otherwise select only _success prerequisite rules
+                // (usually zero) and silently compile an empty prerequisite workflow. Values the
+                // prerequisite declares itself still apply via the prereq.context merge below.
+                const prereqContext = getChildContext(omitKeys(context, STATUS_AND_ACTION), prereq.context);
                 const prereqWorkflow = await createWorkflowForVerb(prereqContext);
                 //if the prerequisite has a transformation to apply to the data before running the prerequisite workflow
                 //prepend that transformation as an ad-hoc task to the prerequisite workflow
+                //(`when` is a gate consulted by the executioner, not a data transformation — strip
+                //it here so it is never evaluated onto the step data)
                 // eslint-disable-next-line no-unused-vars
-                const { context: __stripped, ...prereqPayload } = prereq;
+                const { context: __stripped, when: __when, ...prereqPayload } = prereq;
                 const description = `Data transformation towards ${taskToShortName(prereqContext)}`;
                 const verb = TRANSFORMATION;
-                return [
+                const workflow = [
                     {
                         verb,
                         description,
-                        logic: async ({ data, context, dispatch, log }) => {
+                        logic: async ({ data, context, parentContext, dispatch, log }) => {
                             const result = {};
                             const prereqContext = getChildContext(context, { ...prereq.context, verb, description });
                             for (const [key, value] of Object.entries(prereqPayload)) {
                                 result[key] = await getObjectOrFunctionResult(value, {
                                     data,
                                     context: prereqContext,
+                                    // The declaring step's routing. `context` here is deliberately
+                                    // the PREREQUISITE's — a callback resolving a query against the
+                                    // prerequisite's own collection wants that — but a callback
+                                    // that needs to know which collection the PARENT is acting on
+                                    // (a wildcard rule has no declared constants to read instead)
+                                    // has no other way to reach it.
+                                    parentContext,
                                     dispatch,
                                     log
                                 });
@@ -116,6 +132,18 @@ function prepareGenerator(steps, rulesRepository, log) {
                         }
                     }
                 ].concat(prereqWorkflow);
+                // Routing seed for execution: the prerequisite's OWN declared context keys.
+                // status/action are excluded — they must not overwrite the live values at execute
+                // time. Sourced from prereq.context (the author's declaration), not the merged
+                // prereqContext, which carries build-time per-request fields.
+                // Built once per workflow build, but SPREAD per prerequisite per message by the
+                // executioner — so it must be a fast-properties object, not a lodash `omit` result.
+                workflow.prereqContext = Object.freeze(omitKeys(prereq.context, STATUS_AND_ACTION));
+                // Gate for the whole mini-workflow, evaluated by the executioner BEFORE any of its
+                // steps (including the TRANSFORMATION) run. Same clone caveat as prereqContext:
+                // anything that rebuilds this array must carry the property across.
+                if ('when' in prereq) workflow.when = prereq.when;
+                return workflow;
             })
         );
         //`prerequisites` now is an array of arrays.
